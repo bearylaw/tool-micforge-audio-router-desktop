@@ -132,6 +132,11 @@ class AudioEngine:
 
         self.chain = VoiceChain(self.samplerate)
         self.chain.configure(cfg.voice, cfg.fx)
+        # The capture path needs its own instance. Every stage is stateful, so
+        # pushing two different signals through one chain in the same tick
+        # interleaves the filter and delay memories and both come out wrong.
+        self.capture_chain = VoiceChain(self.samplerate)
+        self.capture_chain.configure(cfg.voice, cfg.fx)
         self._limiter = Limiter(self.samplerate)
 
         self._mic_ring = RingBuffer(self.samplerate * 2, 1)
@@ -182,6 +187,8 @@ class AudioEngine:
             self.blocksize = max(32, int(self.cfg.devices.blocksize))
             self.chain = VoiceChain(self.samplerate)
             self.chain.configure(self.cfg.voice, self.cfg.fx)
+            self.capture_chain = VoiceChain(self.samplerate)
+            self.capture_chain.configure(self.cfg.voice, self.cfg.fx)
             self._limiter = Limiter(self.samplerate)
             self.soundboard.set_samplerate(self.samplerate)
 
@@ -245,6 +252,7 @@ class AudioEngine:
     def apply_settings(self) -> None:
         """Re-read everything that does not need the streams reopened."""
         self.chain.configure(self.cfg.voice, self.cfg.fx)
+        self.capture_chain.configure(self.cfg.voice, self.cfg.fx)
         self._limiter.set_params({
             "enabled": self.cfg.mixer.limiter_enabled,
             "ceiling_db": self.cfg.mixer.limiter_ceiling_db,
@@ -607,7 +615,7 @@ class AudioEngine:
         if mx.capture_enabled:
             cap = cap * db_to_lin(mx.capture_gain_db)
             if self.cfg.voice.apply_to_capture:
-                cap = self.chain.process(cap)
+                cap = self.capture_chain.process(cap)
         else:
             cap = np.zeros(n, dtype=np.float32)
         self.levels.capture = float(np.max(np.abs(cap))) if cap.size else 0.0

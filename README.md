@@ -273,7 +273,7 @@ requires, since ctypes cannot implement a COM interface on its own. That is
 
 ```bash
 pip install -e ".[dev]"
-pytest -q                        # 120 tests, no audio hardware needed
+pytest -q                        # 131 tests, no audio hardware needed
 ruff check micforge
 python docs/make_screenshots.py  # regenerate the README images from demo data
 ```
