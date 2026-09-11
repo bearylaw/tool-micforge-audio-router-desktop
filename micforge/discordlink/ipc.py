@@ -121,8 +121,13 @@ class IpcConnection:
         OPEN_EXISTING = 3
         INVALID_HANDLE = ctypes.c_void_p(-1).value
 
-        kernel32 = ctypes.windll.kernel32
+        # use_last_error is required for get_last_error() to report anything
+        # real; without it the error code in the message is meaningless.
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
         kernel32.CreateFileW.restype = wintypes.HANDLE
+        kernel32.CreateFileW.argtypes = [
+            wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, ctypes.c_void_p,
+            wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE]
         handle = kernel32.CreateFileW(path, GENERIC_READ | GENERIC_WRITE, 0, None,
                                       OPEN_EXISTING, 0, None)
         if handle == INVALID_HANDLE or handle is None:
