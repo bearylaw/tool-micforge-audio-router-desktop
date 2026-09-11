@@ -180,14 +180,23 @@ PKEY_Device_FriendlyName = PROPERTYKEY(
 
 
 # --------------------------------------------------------------------------- com glue
+def hresult(hr) -> int:
+    """Normalise an HRESULT to unsigned.
+
+    ctypes hands back a signed 32-bit int, so 0x80010106 arrives as
+    -2147155706 and every comparison against a hex constant silently fails.
+    """
+    return int(hr or 0) & 0xFFFFFFFF
+
+
 class ComError(RuntimeError):
     def __init__(self, hr: int, what: str = ""):
-        self.hr = hr & 0xFFFFFFFF
+        self.hr = hresult(hr)
         super().__init__(f"{what} failed: 0x{self.hr:08X}")
 
 
 def check(hr: int, what: str = "call") -> None:
-    if hr != S_OK:
+    if hresult(hr) != S_OK:
         raise ComError(hr, what)
 
 
@@ -214,8 +223,12 @@ class _ComInit:
         self._did = False
 
     def __enter__(self):
-        hr = ole32.CoInitializeEx(None, self.mode)
-        self._did = hr in (S_OK, 1)  # S_FALSE = already initialised by us
+        hr = hresult(ole32.CoInitializeEx(None, self.mode))
+        # S_FALSE means this thread was already initialised in the mode we
+        # asked for; RPC_E_CHANGED_MODE means it is in the *other* apartment
+        # already (PortAudio does this on the main thread). Both are fine to
+        # keep working in - we just must not call CoUninitialize afterwards.
+        self._did = hr == S_OK
         if hr not in (S_OK, 1, RPC_E_CHANGED_MODE):
             raise ComError(hr, "CoInitializeEx")
         return self
@@ -328,8 +341,9 @@ class _Enumerator:
                 coll, byref(count)), "GetCount")
             for i in range(count.value):
                 dev = c_void_p()
-                if _method(coll, 4, ctypes.HRESULT, wintypes.UINT, POINTER(c_void_p))(
-                        coll, i, byref(dev)) != S_OK:
+                if hresult(_method(coll, 4, ctypes.HRESULT, wintypes.UINT,
+                                   POINTER(c_void_p))(
+                        coll, i, byref(dev))) != S_OK:
                     continue
                 try:
                     out.append((device_id(dev), friendly_name(dev)))
@@ -342,8 +356,8 @@ class _Enumerator:
 
 def device_id(dev: c_void_p) -> str:
     pid = ctypes.c_wchar_p()
-    if _method(dev, 5, ctypes.HRESULT, POINTER(ctypes.c_wchar_p))(
-            dev, byref(pid)) != S_OK:
+    if hresult(_method(dev, 5, ctypes.HRESULT, POINTER(ctypes.c_wchar_p))(
+            dev, byref(pid))) != S_OK:
         return ""
     try:
         return pid.value or ""
@@ -353,14 +367,14 @@ def device_id(dev: c_void_p) -> str:
 
 def friendly_name(dev: c_void_p) -> str:
     store = c_void_p()
-    if _method(dev, 4, ctypes.HRESULT, wintypes.DWORD, POINTER(c_void_p))(
-            dev, 0, byref(store)) != S_OK:  # STGM_READ
+    if hresult(_method(dev, 4, ctypes.HRESULT, wintypes.DWORD, POINTER(c_void_p))(
+            dev, 0, byref(store))) != S_OK:  # STGM_READ
         return ""
     try:
         pv = PROPVARIANT()
-        if _method(store, 5, ctypes.HRESULT, POINTER(PROPERTYKEY),
-                   POINTER(PROPVARIANT))(
-                store, byref(PKEY_Device_FriendlyName), byref(pv)) != S_OK:
+        if hresult(_method(store, 5, ctypes.HRESULT, POINTER(PROPERTYKEY),
+                            POINTER(PROPVARIANT))(
+                store, byref(PKEY_Device_FriendlyName), byref(pv))) != S_OK:
             return ""
         try:
             if pv.vt == VT_LPWSTR and pv.value.pwszVal:
@@ -499,8 +513,9 @@ def _activate_process_loopback(pid: int, exclude: bool, wfx: WAVEFORMATEX,
 
     handler = _CompletionHandler()
     op = c_void_p()
-    hr = activate(VIRTUAL_AUDIO_DEVICE_PROCESS_LOOPBACK, byref(IID_IAudioClient),
-                  byref(pv), handler.ptr, byref(op))
+    hr = hresult(activate(VIRTUAL_AUDIO_DEVICE_PROCESS_LOOPBACK,
+                          byref(IID_IAudioClient), byref(pv), handler.ptr,
+                          byref(op)))
     if hr != S_OK:
         raise ComError(hr, "ActivateAudioInterfaceAsync")
 
@@ -512,7 +527,7 @@ def _activate_process_loopback(pid: int, exclude: bool, wfx: WAVEFORMATEX,
         get_result = _method(op, 3, ctypes.HRESULT, POINTER(ctypes.HRESULT),
                              POINTER(c_void_p))
         check(get_result(op, byref(activate_hr), byref(iface)), "GetActivateResult")
-        hr_value = activate_hr.value or 0
+        hr_value = hresult(activate_hr.value)
         if hr_value != S_OK:
             raise ComError(hr_value, "process loopback activation")
         if not iface:
@@ -615,7 +630,7 @@ class WasapiCapture:
 
                 event_handle = kernel32.CreateEventW(None, False, False, None)
                 set_event = _method(client, 13, ctypes.HRESULT, wintypes.HANDLE)
-                if set_event(client, event_handle) != S_OK:
+                if hresult(set_event(client, event_handle)) != S_OK:
                     kernel32.CloseHandle(event_handle)
                     event_handle = None
 
@@ -677,8 +692,8 @@ class WasapiCapture:
                            POINTER(WAVEFORMATEX), POINTER(GUID))
             ok = False
             for periodicity in (0, AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM):
-                hr = init(client, AUDCLNT_SHAREMODE_SHARED, flags, duration,
-                          periodicity, byref(wfx), None)
+                hr = hresult(init(client, AUDCLNT_SHAREMODE_SHARED, flags,
+                                  duration, periodicity, byref(wfx), None))
                 if hr == S_OK:
                     ok = True
                     break
@@ -712,11 +727,12 @@ class WasapiCapture:
         init = _method(client, 3, ctypes.HRESULT, wintypes.DWORD, wintypes.DWORD,
                        ctypes.c_longlong, ctypes.c_longlong,
                        c_void_p, POINTER(GUID))
-        hr = init(client, AUDCLNT_SHAREMODE_SHARED, flags, duration, 0, mix, None)
+        hr = hresult(init(client, AUDCLNT_SHAREMODE_SHARED, flags, duration, 0,
+                          mix, None))
         if hr != S_OK:
             # Some drivers reject event-driven loopback; polling works everywhere.
-            hr = init(client, AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_LOOPBACK,
-                      duration, 0, mix, None)
+            hr = hresult(init(client, AUDCLNT_SHAREMODE_SHARED,
+                              AUDCLNT_STREAMFLAGS_LOOPBACK, duration, 0, mix, None))
             check(hr, "Initialize(loopback)")
         return client, kind, sr, ch, enumerator, device, mix
 
@@ -742,7 +758,7 @@ class WasapiCapture:
 
             while not self._stop.is_set():
                 packet = wintypes.UINT()
-                if get_next(capture, byref(packet)) != S_OK:
+                if hresult(get_next(capture, byref(packet))) != S_OK:
                     break
                 if packet.value == 0:
                     break
@@ -750,8 +766,8 @@ class WasapiCapture:
                 data_ptr = c_void_p()
                 frames = wintypes.UINT()
                 flags = wintypes.DWORD()
-                hr = get_buffer(capture, byref(data_ptr), byref(frames),
-                                byref(flags), None, None)
+                hr = hresult(get_buffer(capture, byref(data_ptr), byref(frames),
+                                        byref(flags), None, None))
                 if hr != S_OK:
                     break
                 try:
