@@ -4,17 +4,28 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import (QColorDialog, QFileDialog, QGridLayout, QHBoxLayout,
-                               QLabel, QLineEdit, QMenu, QMessageBox, QPushButton,
-                               QScrollArea, QSizePolicy, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QColorDialog,
+    QFileDialog,
+    QGridLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMenu,
+    QMessageBox,
+    QPushButton,
+    QScrollArea,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
+)
 
 from .. import config, log
 from ..sound import decode
 from . import theme
-from .widgets import (Card, ChoiceRow, HotkeyEdit, Toggle, ValueSlider, hint, hline,
-                      section)
+from .widgets import Card, HotkeyEdit, Toggle, ValueSlider, hint, hline, section
 
 _log = log.get("ui.soundboard")
 

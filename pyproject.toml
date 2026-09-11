@@ -1,0 +1,85 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "micforge"
+version = "1.0.0"
+description = "Route your microphone, any application's audio and a soundboard into a virtual microphone for Discord, with a full voice changer."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [{ name = "Bernhard Siegl" }]
+keywords = ["audio", "discord", "soundboard", "voice-changer", "virtual-microphone",
+            "wasapi", "loopback", "pipewire"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: X11 Applications :: Qt",
+    "Environment :: Win32 (MS Windows)",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows :: Windows 10",
+    "Operating System :: Microsoft :: Windows :: Windows 11",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Sound/Audio :: Mixers",
+]
+
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "sounddevice>=0.4.6",
+    "soundfile>=0.12",
+    "av>=10.0",
+    "PySide6-Essentials>=6.5",
+    "psutil>=5.9",
+    "pynput>=1.7",
+    "pycaw>=20230407; sys_platform == 'win32'",
+    "comtypes>=1.2; sys_platform == 'win32'",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "ruff>=0.4",
+    "pyinstaller>=6.0",
+]
+
+[project.scripts]
+micforge = "micforge.__main__:main"
+
+[project.gui-scripts]
+micforge-gui = "micforge.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/bearylaw/public-micforge-app"
+Issues = "https://github.com/bearylaw/public-micforge-app/issues"
+
+[tool.setuptools.packages.find]
+include = ["micforge*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 92
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM"]
+ignore = [
+    "E501",    # long lines are caught by the formatter, not worth failing on
+    "B008",
+    "SIM105",
+    # Nested ifs are often clearer than one long condition when each level
+    # carries its own comment explaining why the check is there.
+    "SIM102",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"micforge/audio/wasapi.py" = ["N801", "N803", "N806"]  # Win32 struct names
+"tests/*" = ["E402"]

@@ -1,0 +1,17 @@
+# Core audio and DSP
+numpy>=1.24
+scipy>=1.10            # C-speed IIR filtering; there are slow pure-numpy fallbacks
+sounddevice>=0.4.6     # PortAudio bindings for device I/O
+soundfile>=0.12        # WAV/FLAC/OGG decoding
+av>=10.0               # MP3/M4A/Opus decoding (bundled FFmpeg, no system install)
+
+# Interface
+PySide6-Essentials>=6.5
+
+# Integration
+psutil>=5.9            # process lookup and the no-setup Discord voice detector
+pynput>=1.7            # global hotkeys and push-to-talk
+
+# Windows only: enumerating which apps currently hold an audio session
+pycaw>=20230407; sys_platform == "win32"
+comtypes>=1.2; sys_platform == "win32"

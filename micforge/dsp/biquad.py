@@ -6,7 +6,7 @@ import numpy as np
 from . import Stage, clampf
 
 try:  # scipy gives us a C-speed IIR; the fallback is correct but slower
-    from scipy.signal import lfilter, lfilter_zi  # type: ignore
+    from scipy.signal import lfilter  # type: ignore
 
     _HAVE_SCIPY = True
 except Exception:  # pragma: no cover - exercised only without scipy
@@ -168,7 +168,7 @@ class Equalizer(Stage):
         specs = params.get("bands") or []
         if len(specs) != len(self._bands):
             self._bands = [Biquad(self.sr) for _ in specs]
-        for bq, spec in zip(self._bands, specs):
+        for bq, spec in zip(self._bands, specs, strict=False):
             bq.configure(str(spec.get("type", "peaking")),
                          float(spec.get("freq", 1000.0)),
                          float(spec.get("q", 1.0)),

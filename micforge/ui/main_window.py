@@ -3,9 +3,18 @@ from __future__ import annotations
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QAction, QColor, QFont, QIcon, QPainter, QPen, QPixmap
-from PySide6.QtWidgets import (QHBoxLayout, QLabel, QMainWindow, QMenu, QMessageBox,
-                               QPushButton, QSystemTrayIcon, QTabWidget, QVBoxLayout,
-                               QWidget)
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QMainWindow,
+    QMenu,
+    QMessageBox,
+    QPushButton,
+    QSystemTrayIcon,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
 from .. import log
 from . import theme

@@ -71,6 +71,11 @@ class Voice:
         return max(self.end_frame - self.start_frame, 1)
 
     @property
+    def releasing(self) -> bool:
+        """True once the fade-out has started - still audible, but on its way out."""
+        return self._releasing
+
+    @property
     def progress(self) -> float:
         if self.finished:
             return 1.0
@@ -104,7 +109,8 @@ class Voice:
             idx = self.start_frame + np.mod(idx - self.start_frame, span)
             self.pos = float(self.start_frame
                              + np.mod(self.pos + self.rate * n - self.start_frame, span))
-            ended = 0
+            # A looping clip never runs out, so the whole block is real audio.
+            ended = n
         else:
             past = idx >= self.end_frame - 1
             ended = int(np.argmax(past)) if np.any(past) else n
@@ -141,9 +147,7 @@ class Voice:
             self._release_left -= n
             if self._release_left <= 0:
                 self.finished = True
-        elif not self.loop and ended < n:
-            self.finished = True
-        elif not self.loop and self.pos >= self.end_frame:
+        elif not self.loop and (ended < n or self.pos >= self.end_frame):
             self.finished = True
 
         return out * self.gain
@@ -183,12 +187,23 @@ class Soundboard:
                     if v.entry_id == entry.id:
                         v.release(20.0, self.samplerate)
 
-            live = [v for v in self._voices if not v.finished]
-            if len(live) >= max(1, sb.max_voices):
-                # Steal the oldest rather than refusing to play; a soundboard
-                # that silently ignores a button feels broken.
-                oldest = min(live, key=lambda v: v.started_at)
-                oldest.release(20.0, self.samplerate)
+            # Steal rather than refuse: a soundboard that silently ignores a
+            # button feels broken. Voices already fading out do not count
+            # against the limit, but they do still cost CPU, so a second hard
+            # cap stops a mashed hotkey growing the pool without bound.
+            limit = max(1, sb.max_voices)
+            live = [v for v in self._voices if not v.finished and not v.releasing]
+            over = len(live) - (limit - 1)
+            if over > 0:
+                for victim in sorted(live, key=lambda v: v.started_at)[:over]:
+                    victim.release(20.0, self.samplerate)
+
+            alive = [v for v in self._voices if not v.finished]
+            # Minus one: we are about to append another voice below.
+            excess = len(alive) - (limit * 2 - 1)
+            if excess > 0:
+                for victim in sorted(alive, key=lambda v: v.started_at)[:excess]:
+                    victim.stop_now()
 
             self._voices.append(Voice(clip, entry, self.samplerate,
                                       gain_db + sb.global_gain_db))
@@ -226,8 +241,15 @@ class Soundboard:
     # ----------------------------------------------------------------- status
     @property
     def active_count(self) -> int:
+        """Voices still making sound, fading ones included (drives ducking)."""
         with self._lock:
             return sum(1 for v in self._voices if not v.finished)
+
+    @property
+    def playing_count(self) -> int:
+        """Voices not yet fading out - this is what ``max_voices`` limits."""
+        with self._lock:
+            return sum(1 for v in self._voices if not v.finished and not v.releasing)
 
     def active(self) -> list[tuple[str, str, float]]:
         with self._lock:

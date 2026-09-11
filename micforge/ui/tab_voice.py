@@ -6,9 +6,20 @@ slider here the moment it gains a parameter there.
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QComboBox, QGridLayout, QHBoxLayout, QInputDialog,
-                               QLabel, QListWidget, QListWidgetItem, QMessageBox,
-                               QPushButton, QScrollArea, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QComboBox,
+    QGridLayout,
+    QHBoxLayout,
+    QInputDialog,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QMessageBox,
+    QPushButton,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
 
 from .. import log
 from ..dsp import chain as chain_mod

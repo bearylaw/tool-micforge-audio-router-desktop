@@ -172,7 +172,7 @@ def apply_preset(cfg: config.Config, name: str) -> bool:
         return False
 
     fresh = config._fx_defaults()
-    for kind, params in fresh.items():
+    for params in fresh.values():
         params["enabled"] = False
     # The two safety stages stay on unless a preset says otherwise.
     fresh["compressor"]["enabled"] = True
@@ -200,7 +200,7 @@ def snapshot(cfg: config.Config) -> dict:
         if not isinstance(params, dict):
             continue
         if params.get("enabled"):
-            out[kind] = {k: v for k, v in params.items()}
+            out[kind] = dict(params)
     return out
 
 

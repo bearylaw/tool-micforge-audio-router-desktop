@@ -156,7 +156,7 @@ class VoiceChain:
                 order.append(k)
 
         with self._lock:
-            existing = {k: s for k, s in self._stages}
+            existing = dict(self._stages)
             stages: list[tuple[str, Stage]] = []
             for kind in order:
                 stage = existing.get(kind)

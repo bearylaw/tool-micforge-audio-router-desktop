@@ -6,13 +6,19 @@ import subprocess
 import sys
 
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtWidgets import (QHBoxLayout, QLabel, QPlainTextEdit, QPushButton,
-                               QScrollArea, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QPlainTextEdit,
+    QPushButton,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
 
 from .. import config, log
 from ..audio import devices
-from . import theme
-from .widgets import Card, ChoiceRow, HotkeyEdit, Toggle, ValueSlider, hint, hline
+from .widgets import Card, ChoiceRow, HotkeyEdit, Toggle, hint, hline
 
 _log = log.get("ui.settings")
 

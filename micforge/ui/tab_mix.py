@@ -2,10 +2,21 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtWidgets import (QButtonGroup, QComboBox, QGridLayout, QHBoxLayout,
-                               QLabel, QLineEdit, QListWidget, QListWidgetItem,
-                               QPushButton, QRadioButton, QScrollArea, QVBoxLayout,
-                               QWidget)
+from PySide6.QtWidgets import (
+    QButtonGroup,
+    QComboBox,
+    QGridLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QPushButton,
+    QRadioButton,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
 
 from .. import log
 from ..audio import devices, sources
