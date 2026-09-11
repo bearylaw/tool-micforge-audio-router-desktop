@@ -183,6 +183,7 @@ class AudioEngine:
                                        blocksize=self.blocksize)
             self._raise_timer_resolution()
 
+            devices.set_preferred_hostapi(self.cfg.devices.prefer_hostapi)
             self.samplerate = int(self.cfg.devices.samplerate)
             self.blocksize = max(32, int(self.cfg.devices.blocksize))
             self.chain = VoiceChain(self.samplerate)
@@ -348,6 +349,11 @@ class AudioEngine:
             self.status.warnings.append(f"Cannot open monitor {dev.name}: {exc}")
 
     def _open_mic(self) -> None:
+        if not self.cfg.devices.keep_alive and not self.cfg.mixer.mic_enabled:
+            # keep_alive normally holds the stream open so muting and unmuting
+            # is instant; turning it off releases the device for other apps.
+            _log.info("microphone disabled and keep-alive off - not opening it")
+            return
         name = self.cfg.devices.microphone
         dev = devices.resolve(name, "input") if name else devices.default_device("input")
         if dev is None:

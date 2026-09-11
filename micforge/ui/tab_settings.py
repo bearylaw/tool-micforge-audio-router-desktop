@@ -81,6 +81,20 @@ class SettingsTab(QWidget):
         card.add(hint("Pick left or right if your interface puts the microphone on one "
                       "side of a stereo input."))
 
+        self.hostapi = ChoiceRow("Host API", ["auto"] + devices.available_hostapis(),
+                                 label_width=120)
+        self.hostapi.valueChanged.connect(self._on_audio)
+        card.add(self.hostapi)
+        card.add(hint("auto picks WASAPI on Windows and ALSA on Linux, which is right "
+                      "for almost everyone. Override it if a device only behaves under "
+                      "a particular driver."))
+
+        self.keep_alive = Toggle("Keep the microphone open while muted", True,
+                                 "Makes muting instant. Turn it off to release the "
+                                 "device for other apps when the mic is disabled.")
+        self.keep_alive.toggled.connect(self._on_audio)
+        card.add(self.keep_alive)
+
         self.exclusive = Toggle("Exclusive mode (Windows, lower latency)", False,
                                 "Takes sole control of the device. Lower latency, but "
                                 "other apps cannot use it at the same time.")
@@ -197,6 +211,8 @@ class SettingsTab(QWidget):
                 self.blocksize.set_value(label)
                 break
         self.mic_channels.set_value(d.mic_channel_mode)
+        self.hostapi.set_value(d.prefer_hostapi or "auto")
+        self.keep_alive.setChecked(d.keep_alive)
         self.exclusive.setChecked(d.exclusive_mode)
 
         self.ptt_enabled.setChecked(mx.ptt_enabled)
@@ -228,6 +244,8 @@ class SettingsTab(QWidget):
         d.samplerate = int(self.samplerate.value())
         d.blocksize = BLOCK_CHOICES.get(self.blocksize.value(), 240)
         d.mic_channel_mode = self.mic_channels.value()
+        d.prefer_hostapi = self.hostapi.value()
+        d.keep_alive = self.keep_alive.isChecked()
         d.exclusive_mode = self.exclusive.isChecked()
         self.app.save(0.2)
         self._update_latency_label()

@@ -65,7 +65,8 @@ class DeviceSettings:
     mic_channel_mode: str = "mono"
     """mono | left | right"""
     prefer_hostapi: str = "auto"
-    """auto | WASAPI | DirectSound | MME | ALSA"""
+    """Force a host API instead of the built-in preference order.
+    auto | Windows WASAPI | Windows DirectSound | Windows WDM-KS | MME | ALSA"""
     exclusive_mode: bool = False
     output_latency: str = "low"
     input_latency: str = "low"
@@ -84,8 +85,6 @@ class CaptureSettings:
     process_pid: int = 0
     process_name: str = ""
     window_title: str = ""
-    include_tree: bool = True
-    """Capture the child processes too (Chrome/Discord style multi-process apps)."""
     auto_reattach: bool = True
     """If the target app restarts, re-bind it by executable name."""
     reattach_interval_s: float = 2.0
@@ -216,9 +215,7 @@ class SoundEntry:
     to_mic: bool = True
     to_monitor: bool = True
     stop_others: bool = False
-    category: str = ""
     color: str = "#3d7dff"
-    favourite: bool = False
 
 
 @dataclass
@@ -263,7 +260,6 @@ class DiscordSettings:
     access_token: str = ""
     refresh_token: str = ""
     token_expires_at: float = 0.0
-    auto_connect: bool = True
     reconnect_interval_s: float = 5.0
     heuristic_poll_s: float = 1.0
     heuristic_process_names: list[str] = field(
@@ -279,7 +275,6 @@ class DiscordSettings:
 # --------------------------------------------------------------------------- ui/app
 @dataclass
 class UISettings:
-    theme: str = "dark"
     accent: str = "#3d7dff"
     start_minimised: bool = False
     minimise_to_tray: bool = True
@@ -288,7 +283,6 @@ class UISettings:
     window_geometry: str = ""
     last_tab: int = 0
     meter_fps: int = 30
-    show_advanced: bool = False
 
 
 @dataclass

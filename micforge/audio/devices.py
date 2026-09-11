@@ -115,7 +115,33 @@ def _all() -> list[DeviceInfo]:
     return out
 
 
+_FORCED_HOSTAPI = ""
+
+
+def set_preferred_hostapi(name: str) -> None:
+    """Force one host API to the top of the ranking.
+
+    The built-in order is right for almost everyone, but someone with an ASIO
+    or JACK setup, or a device that only behaves under DirectSound, needs the
+    override.
+    """
+    global _FORCED_HOSTAPI
+    _FORCED_HOSTAPI = "" if (name or "auto").strip().lower() == "auto" else name.strip()
+    if _FORCED_HOSTAPI:
+        _log.info("host API forced to %s", _FORCED_HOSTAPI)
+
+
+def available_hostapis() -> list[str]:
+    seen: list[str] = []
+    for dev in _all():
+        if dev.hostapi_name not in seen:
+            seen.append(dev.hostapi_name)
+    return seen
+
+
 def _rank(dev: DeviceInfo) -> tuple[int, int]:
+    if _FORCED_HOSTAPI and dev.hostapi_name.lower() == _FORCED_HOSTAPI.lower():
+        return -1, dev.index
     prefs = HOSTAPI_PREFERENCE.get(_platform_key(), [])
     try:
         rank = prefs.index(dev.hostapi_name)
