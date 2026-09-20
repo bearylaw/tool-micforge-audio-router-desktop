@@ -55,8 +55,8 @@ micforge = "micforge.__main__:main"
 micforge-gui = "micforge.__main__:main"
 
 [project.urls]
-Homepage = "https://github.com/bearylaw/public-micforge-app"
-Issues = "https://github.com/bearylaw/public-micforge-app/issues"
+Homepage = "https://github.com/bearylaw/tool-micforge-audio-router-desktop"
+Issues = "https://github.com/bearylaw/tool-micforge-audio-router-desktop/issues"
 
 [tool.setuptools.packages.find]
 include = ["micforge*"]

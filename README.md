@@ -40,8 +40,8 @@ points for the fifteen effects underneath.
 Python 3.10 or newer.
 
 ```bash
-git clone https://github.com/bearylaw/public-micforge-app.git
-cd public-micforge-app
+git clone https://github.com/bearylaw/tool-micforge-audio-router-desktop.git
+cd tool-micforge-audio-router-desktop
 python -m venv .venv
 ```
 

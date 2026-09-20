@@ -36,7 +36,7 @@ def _post(url: str, fields: dict) -> dict:
     req = urllib.request.Request(
         url, data=body, method="POST",
         headers={"Content-Type": "application/x-www-form-urlencoded",
-                 "User-Agent": "MicForge (https://github.com/bearylaw/public-micforge-app)"},
+                 "User-Agent": "MicForge (https://github.com/bearylaw/tool-micforge-audio-router-desktop)"},
     )
     try:
         with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
